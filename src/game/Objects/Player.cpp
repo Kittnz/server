@@ -1903,7 +1903,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // preparing unsummon pet if lost (we must get pet before teleportation or will not find it later)
     Pet* pet = GetPet();
 
-    MapEntry const* mEntry = sMapStore.LookupEntry(mapid);
+    MapEntry const* mEntry = sMapStorage.LookupEntry<MapEntry>(mapid);
 
     // don't let enter battlegrounds without assigned battleground id (for example through areatrigger)...
     // don't let gm level > 1 either
@@ -4630,7 +4630,7 @@ void Player::KillPlayer()
     //SetFlag( UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_IN_PVP );
 
     SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
-    ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_RELEASE_TIMER, !sMapStore.LookupEntry(GetMapId())->Instanceable());
+    ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_RELEASE_TIMER, !sMapStorage.LookupEntry<MapEntry>(GetMapId())->Instanceable());
 
     // 6 minutes until repop at graveyard
     m_deathTimer = 6 * MINUTE * IN_MILLISECONDS;
@@ -14532,7 +14532,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
     _LoadGuild(holder->GetResult(PLAYER_LOGIN_QUERY_LOADGUILD));
 
-    MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
+    MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(GetMapId());
 
     // Check for valid map
     if (!mapEntry)
@@ -14600,7 +14600,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     // player bounded instance saves loaded in _LoadBoundInstances, group versions at group loading
     DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(GetMapId());
 
-    mapEntry = sMapStore.LookupEntry(GetMapId());
+    mapEntry = sMapStorage.LookupEntry<MapEntry>(GetMapId());
     if (mapEntry && mapEntry->IsDungeon())
     {
         // if the player is in an instance and it has been reset in the meantime teleport him to the entrance
@@ -15094,7 +15094,7 @@ void Player::LoadCorpse()
     else
     {
         if (Corpse *corpse = GetCorpse())
-            ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_RELEASE_TIMER, corpse && !sMapStore.LookupEntry(corpse->GetMapId())->Instanceable());
+            ApplyModByteFlag(PLAYER_FIELD_BYTES, 0, PLAYER_FIELD_BYTE_RELEASE_TIMER, corpse && !sMapStorage.LookupEntry<MapEntry>(corpse->GetMapId())->Instanceable());
         else
         {
             //Prevent Dead Player login without corpse
@@ -15513,7 +15513,7 @@ void Player::_LoadBoundInstances(QueryResult *result)
             // so the value read from the DB may be wrong here but only if the InstanceSave is loaded
             // and in that case it is not used
 
-            MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
+            MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapId);
             if (!mapEntry || !mapEntry->IsDungeon())
             {
                 sLog.outError("_LoadBoundInstances: player %s(%d) has bind to nonexistent or not dungeon map %d", GetName(), GetGUIDLow(), mapId);
@@ -15610,7 +15610,7 @@ InstancePlayerBind* Player::BindToInstance(DungeonPersistentState *state, bool p
 
 DungeonPersistentState* Player::GetBoundInstanceSaveForSelfOrGroup(uint32 mapid)
 {
-    MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+    MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapid);
     if (!mapEntry)
         return nullptr;
 
@@ -15768,7 +15768,7 @@ bool Player::_LoadHomeBind(QueryResult *result)
         m_homebindY = fields[3].GetFloat();
         m_homebindZ = fields[4].GetFloat();
 
-        MapEntry const* bindMapEntry = sMapStore.LookupEntry(m_homebindMapId);
+        MapEntry const* bindMapEntry = sMapStorage.LookupEntry<MapEntry>(m_homebindMapId);
 
         // accept saved data only for valid position (and non instanceable), and accessable
         if (MapManager::IsValidMapCoord(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ) &&
@@ -16550,7 +16550,7 @@ void Player::ResetInstances(InstanceResetMethod method)
     for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
     {
         DungeonPersistentState *state = itr->second.state;
-        const MapEntry *entry = sMapStore.LookupEntry(itr->first);
+        const MapEntry *entry = sMapStorage.LookupEntry<MapEntry>(itr->first);
         if (!entry || !state->CanReset())
         {
             ++itr;
@@ -16560,7 +16560,7 @@ void Player::ResetInstances(InstanceResetMethod method)
         if (method == INSTANCE_RESET_ALL)
         {
             // the "reset all instances" method can only reset normal maps
-            if (entry->map_type == MAP_RAID)
+            if (entry->mapType == MAP_RAID)
             {
                 ++itr;
                 continue;

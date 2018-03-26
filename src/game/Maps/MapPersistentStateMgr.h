@@ -289,8 +289,8 @@ class DungeonResetScheduler
     public:                                                 // accessors
         time_t GetResetTimeFor(uint32 mapid) { return m_resetTimeByMapId[mapid]; }
 
-        static uint32 GetMaxResetTimeFor(InstanceTemplate const* temp);
-        static time_t CalculateNextResetTime(InstanceTemplate const* temp, time_t prevResetTime);
+        static uint32 GetMaxResetTimeFor(MapEntry const* temp);
+        static time_t CalculateNextResetTime(MapEntry const* temp, time_t prevResetTime);
     public:                                                 // modifiers
         void SetResetTimeFor(uint32 mapid, time_t t)
         {
@@ -371,7 +371,7 @@ class MANGOS_DLL_DECL MapPersistentStateManager : public MaNGOS::Singleton<MapPe
 template<typename Do>
 void MapPersistentStateManager::DoForAllStatesWithMapId(uint32 mapId, uint32 instanceId, Do& _do)
 {
-    MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
+    MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapId);
     if (!mapEntry)
         return;
 

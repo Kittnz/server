@@ -285,7 +285,7 @@ void ScriptMgr::LoadScripts(ScriptMapMap& scripts, const char* tablename)
             }
             case SCRIPT_COMMAND_TELEPORT_TO:
             {
-                if (!sMapStore.LookupEntry(tmp.teleportTo.mapId))
+                if (!sMapStorage.LookupEntry<MapEntry>(tmp.teleportTo.mapId))
                 {
                     sLog.outErrorDb("Table `%s` has invalid map (Id: %u) in SCRIPT_COMMAND_TELEPORT_TO for script id %u", tablename, tmp.teleportTo.mapId, tmp.id);
                     continue;

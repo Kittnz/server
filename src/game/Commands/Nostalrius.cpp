@@ -2989,7 +2989,7 @@ bool ChatHandler::HandleReloadItemTemplate(char*)
 
 bool ChatHandler::HandleReloadMapTemplate(char*)
 {
-    //sObjectMgr.LoadMapTemplate();
+    sObjectMgr.LoadMapTemplate();
     SendSysMessage(">> Table `map_template` reloaded.");
     return true;
 }

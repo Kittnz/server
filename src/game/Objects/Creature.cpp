@@ -2588,8 +2588,8 @@ void Creature::LogDeath(Unit* pKiller) const
     logStmt.addInt32(GetEntry());
     logStmt.addInt32(GetGUIDLow());
 
-    MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
-    std::string result0 = mapEntry->name[sWorld.GetDefaultDbcLocale()];
+    const MapEntry* mapEntry = sMapStorage.LookupEntry<MapEntry>(GetMapId());
+    std::string result0 = mapEntry->name;
 
     logStmt.addString(result0 + "." + GetName());
     logStmt.addInt32(GetCombatTime(true));
@@ -2660,8 +2660,8 @@ void Creature::LogLongCombat() const
     logStmt.addInt32(GetEntry());
     logStmt.addInt32(GetGUIDLow());
 
-    MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
-    std::string result0 = mapEntry->name[sWorld.GetDefaultDbcLocale()];
+    const MapEntry* mapEntry = sMapStorage.LookupEntry<MapEntry>(GetMapId());
+    std::string result0 = mapEntry->name;
 
     logStmt.addString(result0 + "." + GetName());
     logStmt.addInt32(GetCombatTime(true));
@@ -2682,8 +2682,8 @@ void Creature::LogScriptInfo(std::ostringstream &data) const
     logStmt.addInt32(GetEntry());
     logStmt.addInt32(GetGUIDLow());
 
-    MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
-    std::string result0 = mapEntry->name[sWorld.GetDefaultDbcLocale()];
+    const MapEntry* mapEntry = sMapStorage.LookupEntry<MapEntry>(GetMapId());
+    std::string result0 = mapEntry->name;
 
     logStmt.addString(result0 + "." + GetName());
     logStmt.addInt32(GetCombatTime(true));

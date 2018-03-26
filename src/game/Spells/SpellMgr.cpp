@@ -1206,7 +1206,7 @@ void SpellMgr::LoadSpellTargetPositions()
         st.target_Z           = fields[4].GetFloat();
         st.target_Orientation = fields[5].GetFloat();
 
-        MapEntry const* mapEntry = sMapStore.LookupEntry(st.target_mapId);
+        MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(st.target_mapId);
         if (!mapEntry)
         {
             sLog.outErrorDb("Spell (ID:%u) target map (ID: %u) does not exist in `Map.dbc`.", Spell_ID, st.target_mapId);
@@ -3824,7 +3824,7 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spell
         case 22012:                                         // Spirit Heal
         case 24171:                                         // Resurrection Impact Visual
         {
-            MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
+            MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapId);
             if (!mapEntry)
                 return SPELL_FAILED_REQUIRES_AREA;
             return mapEntry->IsBattleGround() ? SPELL_CAST_OK : SPELL_FAILED_ONLY_BATTLEGROUNDS;

@@ -1821,7 +1821,7 @@ void ObjectMgr::LoadCreatures(bool reload)
         int16 GuidPoolId        = fields[18].GetInt16();
         int16 EntryPoolId       = fields[19].GetInt16();
 
-        MapEntry const* mapEntry = sMapStore.LookupEntry(data.mapid);
+        MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(data.mapid);
         if (!mapEntry)
         {
             sLog.outErrorDb("Table `creature` have creature (GUID: %u) that spawned at nonexistent map (Id: %u), skipped.", guid, data.mapid);
@@ -2025,7 +2025,7 @@ void ObjectMgr::LoadGameobjects(bool reload)
         data.visibilityModifier = fields[19].GetFloat();
         data.instanciatedContinentInstanceId = sMapMgr.GetContinentInstanceId(data.mapid, data.posX, data.posY);
 
-        MapEntry const* mapEntry = sMapStore.LookupEntry(data.mapid);
+        MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(data.mapid);
         if (!mapEntry)
         {
             sLog.outErrorDb("Table `gameobject` have gameobject (GUID: %u Entry: %u) that spawned at nonexistent map (Id: %u), skip", guid, data.id, data.mapid);
@@ -2514,7 +2514,7 @@ void ObjectMgr::LoadItemPrototypes()
         if (proto->Area && !AreaEntry::GetById(proto->Area))
             sLog.outErrorDb("Item (Entry: %u) has wrong Area (%u)", i, proto->Area);
 
-        if (proto->Map && !sMapStore.LookupEntry(proto->Map))
+        if (proto->Map && !sMapStorage.LookupEntry<MapEntry>(proto->Map))
             sLog.outErrorDb("Item (Entry: %u) has wrong Map (%u)", i, proto->Map);
 
         if (proto->BagFamily)
@@ -2872,7 +2872,7 @@ void ObjectMgr::LoadPlayerInfo()
                 continue;
             }
 
-            if (sMapStore.LookupEntry(mapId)->Instanceable())
+            if (sMapStorage.LookupEntry<MapEntry>(mapId)->Instanceable())
             {
                 sLog.outErrorDb("Home position in instanceable map for class %u race %u pair in `playercreateinfo` table, ignoring.", current_class, current_race);
                 continue;
@@ -3629,7 +3629,7 @@ void ObjectMgr::LoadGroups()
                 }
             }
 
-            MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
+            MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapId);
             if (!mapEntry || !mapEntry->IsDungeon())
             {
                 sLog.outErrorDb("Incorrect entry in group_instance table : no dungeon map %d", mapId);
@@ -4729,158 +4729,66 @@ struct SQLMapLoader : public SQLStorageLoaderBase<SQLMapLoader, SQLStorage>
     }
 };
 
-InstanceTemplate const* ObjectMgr::GetInstanceTemplate(uint32 map)
+void ObjectMgr::LoadMapTemplate()
 {
-    return sInstanceTemplate.LookupEntry<InstanceTemplate>(map);
-}
+    SQLMapLoader loader;
+    loader.LoadProgressive(sMapStorage, sWorld.GetWowPatch());
 
-void ObjectMgr::LoadInstanceEncounters()
-{
-    m_DungeonEncounters.clear();         // need for reload case
-
-    QueryResult* result = WorldDatabase.Query("SELECT entry, creditType, creditEntry, lastEncounterDungeon FROM instance_encounters");
-
-    if (!result)
+    for (auto itr = sMapStorage.begin<MapEntry>(); itr < sMapStorage.end<MapEntry>(); ++itr)
     {
-        BarGoLink bar(1);
-        bar.step();
-        sLog.outString(">> Loaded 0 Instance Encounters. DB table `instance_encounters` is empty.");
-        sLog.outString();
-        return;
-    }
-
-    BarGoLink bar(result->GetRowCount());
-
-    do
-    {
-        Field* fields = result->Fetch();
-        bar.step();
-
-        uint32 entry = fields[0].GetUInt32();
-        DungeonEncounterEntry const* dungeonEncounter = sDungeonEncounterStore.LookupEntry<DungeonEncounterEntry>(entry);
-
-        if (!dungeonEncounter)
-        {
-            sLog.outErrorDb("Table `instance_encounters` has an invalid encounter id %u, skipped!", entry);
-            continue;
-        }
-
-        uint8 creditType = fields[1].GetUInt8();
-        uint32 creditEntry = fields[2].GetUInt32();
-        switch (creditType)
-        {
-        case ENCOUNTER_CREDIT_KILL_CREATURE:
-        {
-            CreatureInfo const* cInfo = sCreatureStorage.LookupEntry<CreatureInfo>(creditEntry);
-            if (!cInfo)
-            {
-                sLog.outErrorDb("Table `instance_encounters` has an invalid creature (entry %u) linked to the encounter %u (%s), skipped!", creditEntry, entry, dungeonEncounter->encounterName[0]);
-                continue;
-            }
-            break;
-        }
-        /*case ENCOUNTER_CREDIT_CAST_SPELL:
-        {
-            if (!sSpellTemplate.LookupEntry<SpellEntry>(creditEntry))
-            {
-                // skip spells that aren't in dbc for now
-                // sLog.outErrorDb("Table `instance_encounters` has an invalid spell (entry %u) linked to the encounter %u (%s), skipped!", creditEntry, entry, dungeonEncounter->encounterName[0]);
-                continue;
-            }
-            break;
-        }*/
-        default:
-            sLog.outErrorDb("Table `instance_encounters` has an invalid credit type (%u) for encounter %u (%s), skipped!", creditType, entry, dungeonEncounter->encounterName[0]);
-            continue;
-        }
-        uint32 lastEncounterDungeon = fields[3].GetUInt32();
-
-        m_DungeonEncounters.insert(DungeonEncounterMap::value_type(creditEntry, new DungeonEncounter(dungeonEncounter, EncounterCreditType(creditType), creditEntry, lastEncounterDungeon)));
-    } while (result->NextRow());
-
-    delete result;
-
-    sLog.outString(">> Loaded " SIZEFMTD " Instance Encounters", m_DungeonEncounters.size());
-    sLog.outString();
-}
-
-struct SQLInstanceLoader : public SQLStorageLoaderBase<SQLInstanceLoader, SQLStorage>
-{
-    template<class D>
-    void convert_from_str(uint32 /*field_pos*/, char const* src, D& dst)
-    {
-        dst = D(sScriptMgr.GetScriptId(src));
-    }
-};
-
-void ObjectMgr::LoadInstanceTemplate()
-{
-    SQLInstanceLoader loader;
-    loader.Load(sInstanceTemplate);
-
-    for (uint32 i = 0; i < sInstanceTemplate.GetMaxEntry(); ++i)
-    {
-        InstanceTemplate const* temp = GetInstanceTemplate(i);
-        if (!temp)
-            continue;
-
-        MapEntry const* mapEntry = sMapStore.LookupEntry(temp->map);
-        if (!mapEntry)
-        {
-            sLog.outErrorDb("ObjectMgr::LoadInstanceTemplate: bad mapid %d for template!", temp->map);
-            sInstanceTemplate.EraseEntry(i);
-            continue;
-        }
-
-        if (!mapEntry->Instanceable())
-        {
-            sLog.outErrorDb("ObjectMgr::LoadInstanceTemplate: non-instanceable mapid %d for template!", temp->map);
-            sInstanceTemplate.EraseEntry(i);
-            continue;
-        }
-
-        if (temp->parent > 0)
+        if (itr->IsDungeon() && itr->parent > 0)
         {
             // check existence
-            MapEntry const* parentEntry = sMapStore.LookupEntry(temp->parent);
+            MapEntry const* parentEntry = sMapStorage.LookupEntry<MapEntry>(itr->parent);
             if (!parentEntry)
             {
-                sLog.outErrorDb("ObjectMgr::LoadInstanceTemplate: bad parent map id %u for instance template %d template!",
-                                temp->parent, temp->map);
-                const_cast<InstanceTemplate*>(temp)->parent = 0;
+                sLog.outErrorDb("ObjectMgr::LoadMapTemplate: bad parent map id %u for instance template %u template!",
+                    itr->parent, itr->id);
+                const_cast<MapEntry*>(*itr)->parent = 0;
                 continue;
             }
 
             if (parentEntry->IsContinent())
             {
-                sLog.outErrorDb("ObjectMgr::LoadInstanceTemplate: parent point to continent map id %u for instance template %d template, ignored, need be set only for non-continent parents!",
-                                parentEntry->MapID, temp->map);
-                const_cast<InstanceTemplate*>(temp)->parent = 0;
+                sLog.outErrorDb("ObjectMgr::LoadMapTemplate: parent point to continent map id %u for instance template %u template, ignored, need be set only for non-continent parents!",
+                    parentEntry->id, itr->id);
+                const_cast<MapEntry*>(*itr)->parent = 0;
                 continue;
             }
         }
 
-        if (mapEntry->HasResetTime())
+        // if ghost entrance coordinates provided, can't be not exist for instance without ground entrance
+        if (itr->ghostEntranceMap >= 0)
         {
-            if (temp->reset_delay == 0)
+            if (!MapManager::IsValidMapCoord(itr->ghostEntranceMap, itr->ghostEntranceX, itr->ghostEntranceY))
             {
-                // use defaults from the DBC
-                if (mapEntry->SupportsHeroicMode())
-                {
-                    const_cast<InstanceTemplate*>(temp)->reset_delay = mapEntry->resetTimeHeroic / DAY;
-                }
-                else if (mapEntry->resetTimeRaid && mapEntry->map_type == MAP_RAID)
-                {
-                    const_cast<InstanceTemplate*>(temp)->reset_delay = mapEntry->resetTimeRaid / DAY;
-                }
+                sLog.outErrorDb("ObjectMgr::LoadMapTemplate: ghost entrance coordinates invalid for instance template %u template, ignored, need be set only for non-continent parents!", itr->id);
+                sMapStorage.EraseEntry(itr->id);
+                continue;
             }
 
-            // the reset_delay must be at least one day
-            const_cast<InstanceTemplate*>(temp)->reset_delay = std::max((uint32)1, (uint32)(temp->reset_delay * sWorld.getConfig(CONFIG_FLOAT_RATE_INSTANCE_RESET_TIME)));
+            MapEntry const* ghostEntry = sMapStorage.LookupEntry<MapEntry>(itr->ghostEntranceMap);
+            if (!ghostEntry)
+            {
+                sLog.outErrorDb("ObjectMgr::LoadMapTemplate: bad ghost entrance for instance template %u template!", itr->id);
+                sMapStorage.EraseEntry(itr->id);
+                continue;
+            }
+
+            if (!ghostEntry->IsContinent())
+            {
+                sLog.outErrorDb("ObjectMgr::LoadMapTemplate: ghost entrance not at continent map id %u for instance template %u template, ignored, need be set only for non-continent parents!", ghostEntry->id, itr->id);
+                sMapStorage.EraseEntry(itr->id);
+                continue;
+            }
         }
+
+        // the reset_delay must be at least one day
+        if (itr->resetDelay)
+            const_cast<MapEntry*>(*itr)->resetDelay = std::max((uint32)1, (uint32)(itr->resetDelay * sWorld.getConfig(CONFIG_FLOAT_RATE_INSTANCE_RESET_TIME)));
     }
 
-    sLog.outString(">> Loaded %u Instance Template definitions", sInstanceTemplate.GetRecordCount());
+    sLog.outString(">> Loaded %u Map Template definitions", sMapStorage.GetRecordCount());
     sLog.outString();
 }
 
@@ -5296,7 +5204,7 @@ void ObjectMgr::LoadBattlegroundEntranceTriggers()
         }
         bget.bgTypeId = BattleGroundTypeId(bgTypeId);
 
-        MapEntry const* mapEntry = sMapStore.LookupEntry(bget.exit_mapId);
+        MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(bget.exit_mapId);
         if (!mapEntry)
         {
             sLog.outErrorDb("Table `areatrigger_bg_entrance` has nonexistent exit map (ID: %u) for area trigger (ID:%u).", bget.exit_mapId, Trigger_ID);
@@ -5519,7 +5427,7 @@ WorldSafeLocsEntry const *ObjectMgr::GetClosestGraveYard(float x, float y, float
     // some where other
     WorldSafeLocsEntry const* entryFar = nullptr;
 
-    MapEntry const* tempEntry = sMapStore.LookupEntry(MapId);
+    MapEntry const* tempEntry = sMapStorage.LookupEntry<MapEntry>(MapId);
 
     for (GraveYardMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
     {
@@ -5542,9 +5450,9 @@ WorldSafeLocsEntry const *ObjectMgr::GetClosestGraveYard(float x, float y, float
         {
             // if find graveyard at different map from where entrance placed (or no entrance data), use any first
             if (!tempEntry ||
-                    tempEntry->ghost_entrance_map < 0 ||
-                    uint32(tempEntry->ghost_entrance_map) != entry->map_id ||
-                    (tempEntry->ghost_entrance_x == 0.0f && tempEntry->ghost_entrance_y == 0.0f))
+                    tempEntry->ghostEntranceMap < 0 ||
+                    uint32(tempEntry->ghostEntranceMap) != entry->map_id ||
+                    (tempEntry->ghostEntranceX == 0.0f && tempEntry->ghostEntranceY == 0.0f))
             {
                 // not have any coordinates for check distance anyway
                 entryFar = entry;
@@ -5552,8 +5460,8 @@ WorldSafeLocsEntry const *ObjectMgr::GetClosestGraveYard(float x, float y, float
             }
 
             // at entrance map calculate distance (2D);
-            float dist2 = (entry->x - tempEntry->ghost_entrance_x) * (entry->x - tempEntry->ghost_entrance_x)
-                          + (entry->y - tempEntry->ghost_entrance_y) * (entry->y - tempEntry->ghost_entrance_y);
+            float dist2 = (entry->x - tempEntry->ghostEntranceX) * (entry->x - tempEntry->ghostEntranceX)
+                          + (entry->y - tempEntry->ghostEntranceY) * (entry->y - tempEntry->ghostEntranceY);
             if (foundEntr)
             {
                 if (dist2 < distEntr)
@@ -5733,7 +5641,7 @@ void ObjectMgr::LoadAreaTriggerTeleports()
             }
         }
 
-        MapEntry const* mapEntry = sMapStore.LookupEntry(at.target_mapId);
+        MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(at.target_mapId);
         if (!mapEntry)
         {
             sLog.outErrorDb("Table `areatrigger_teleport` has nonexistent target map (ID: %u) for Area trigger (ID:%u).", at.target_mapId, Trigger_ID);
@@ -5762,13 +5670,13 @@ void ObjectMgr::LoadAreaTriggerTeleports()
  */
 AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
 {  
-    MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
+    MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(map_id);
     if (!mapEntry || !mapEntry->IsDungeon())
         return nullptr;
 
     for (AreaTriggerMap::const_iterator itr = mAreaTriggers.begin(); itr != mAreaTriggers.end(); ++itr)
     {
-        if (itr->second.target_mapId == uint32(mapEntry->ghost_entrance_map))
+        if (itr->second.target_mapId == uint32(mapEntry->ghostEntranceMap))
         {
             AreaTriggerEntry const* atEntry = sAreaTriggerStore.LookupEntry(itr->first);
             if (atEntry && atEntry->mapid == map_id)
@@ -7507,9 +7415,10 @@ void ObjectMgr::LoadSoundEntries()
 
         SoundEntriesEntry* sound = new SoundEntriesEntry();
         uint32 soundId = fields[0].GetUInt32();
+        std::string name = fields[1].GetCppString();
 
         sound->Id = soundId;
-        sound->Name = fields[1].GetCppString();
+        sound->InternalName = std::strcpy(sound->InternalName, name.c_str());
 
         mSoundEntries[soundId] = sound;
 

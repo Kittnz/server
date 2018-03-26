@@ -112,7 +112,7 @@ DBCStorage <LiquidTypeEntry> sLiquidTypeStore(LiquidTypefmt);
 DBCStorage <LockEntry> sLockStore(LockEntryfmt);
 
 DBCStorage <MailTemplateEntry> sMailTemplateStore(MailTemplateEntryfmt);
-DBCStorage <MapEntry> sMapStore(MapEntryfmt);
+//DBCStorage <MapEntry> sMapStore(MapEntryfmt);
 
 DBCStorage <QuestSortEntry> sQuestSortStore(QuestSortEntryfmt);
 
@@ -304,13 +304,13 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sLiquidTypeStore,          dbcPath, "LiquidType.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sLockStore,                dbcPath, "Lock.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sMailTemplateStore,        dbcPath, "MailTemplate.dbc");
-    LoadDBC(availableDbcLocales, bar, bad_dbc_files, sMapStore,                 dbcPath, "Map.dbc");
+    //LoadDBC(availableDbcLocales, bar, bad_dbc_files, sMapStore,                 dbcPath, "Map.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sQuestSortStore,           dbcPath, "QuestSort.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sRandomPropertiesPointsStore, dbcPath, "RandPropPoints.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sSkillLineStore,           dbcPath, "SkillLine.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sSkillLineAbilityStore,    dbcPath, "SkillLineAbility.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sSkillRaceClassInfoStore,  dbcPath, "SkillRaceClassInfo.dbc");
-    LoadDBC(availableDbcLocales, bar, bad_dbc_files, sSoundEntriesStore,        dbcPath, "SoundEntries.dbc");
+    //LoadDBC(availableDbcLocales, bar, bad_dbc_files, sSoundEntriesStore,        dbcPath, "SoundEntries.dbc");
     for (uint32 i = 1; i < sSpellMgr.GetMaxSpellId(); ++i)
     {
         SpellEntry const * spell = sSpellMgr.GetSpellEntry(i);
@@ -624,8 +624,8 @@ AreaTableEntry const* GetAreaEntryByAreaFlagAndMap(uint32 area_flag, uint32 map_
     if (area_flag)
         return sAreaStore.LookupEntry(area_flag);
 
-    if (MapEntry const* mapEntry = sMapStore.LookupEntry(map_id))
-        return GetAreaEntryByAreaID(mapEntry->linked_zone);
+    if (MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(map_id))
+        return GetAreaEntryByAreaID(mapEntry->linkedZone);
 
     return nullptr;
 }
@@ -656,7 +656,7 @@ ContentLevels GetContentLevelsForMapAndZone(uint32 mapid, uint32 zoneId)
     if (mapid < 2)
         return CONTENT_1_60;
 
-    MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+    MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapid);
     if (!mapEntry)
         return CONTENT_1_60;
 

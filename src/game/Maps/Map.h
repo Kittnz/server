@@ -97,6 +97,33 @@ struct InstanceTemplate
     bool   mountAllowed;
 };
 
+struct MapEntry
+{
+    uint32 id;
+    uint32 parent;
+    uint32 mapType;
+    uint32 linkedZone;
+    uint32 levelMin;
+    uint32 levelMax;
+    uint32 maxPlayers;
+    uint32 resetDelay;
+    int32 ghostEntranceMap;
+    float ghostEntranceX;
+    float ghostEntranceY;
+    char*  name;
+    uint32 scriptId;
+    uint32 addon;
+
+    bool IsDungeon() const { return mapType == MAP_INSTANCE || mapType == MAP_RAID; }
+    bool IsNonRaidDungeon() const { return mapType == MAP_INSTANCE; }
+    bool Instanceable() const { return mapType == MAP_INSTANCE || mapType == MAP_RAID || mapType == MAP_BATTLEGROUND; }
+    bool IsRaid() const { return mapType == MAP_RAID; }
+    bool IsBattleGround() const { return mapType == MAP_BATTLEGROUND; }
+    bool IsMountAllowed() const { return !IsDungeon() || id == 309 || id == 209 || id == 509 || id == 269; }
+    bool IsContinent() const { return id == 0 || id == 1 || id == 530; }
+    uint32 Expansion() const { return addon; }
+};
+
 typedef std::map<uint32, uint32> AreaFlagByMapId;
 static AreaFlagByMapId sAreaFlagByMapId;
 
@@ -154,8 +181,8 @@ struct AreaEntry
         if (areaEntry)
             return areaEntry;
 
-        if (MapEntry const* mapEntry = sMapStore.LookupEntry(mapId))
-            return sAreaStorage.LookupEntry<AreaEntry>(mapEntry->linked_zone);
+        if (const auto *mapEntry = sMapStorage.LookupEntry<MapEntry>(mapId))
+            return sAreaStorage.LookupEntry<AreaEntry>(mapEntry->linkedZone);
 
         return nullptr;
     }
@@ -294,7 +321,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>, public MaNGOS::Obj
         bool IsRaid() const { return i_mapEntry && i_mapEntry->IsRaid(); }
         bool IsBattleGround() const { return i_mapEntry && i_mapEntry->IsBattleGround(); }
         bool IsContinent() const { return i_mapEntry && i_mapEntry->IsContinent(); }
-        bool IsMountAllowed() const;
+        //bool IsMountAllowed() const;
 
         // can't be NULL for loaded map
         MapPersistentState* GetPersistentState() const { return m_persistentState; }
@@ -807,8 +834,8 @@ class MANGOS_DLL_SPEC DungeonMap : public Map
         bool IsRaid() const { return i_mapEntry && i_mapEntry->IsRaid(); }
         bool IsRaidOrHeroicDungeon() const { return IsRaid() || GetDifficulty() > DUNGEON_DIFFICULTY_NORMAL; }
         bool IsBattleGround() const { return i_mapEntry && i_mapEntry->IsBattleGround(); }
-        bool IsBattleArena() const { return i_mapEntry && i_mapEntry->IsBattleArena(); }
-        bool IsBattleGroundOrArena() const { return i_mapEntry && i_mapEntry->IsBattleGroundOrArena(); }
+        //bool IsBattleArena() const { return i_mapEntry && i_mapEntry->IsBattleArena(); }
+        //bool IsBattleGroundOrArena() const { return i_mapEntry && i_mapEntry->IsBattleGroundOrArena(); }
         bool IsContinent() const { return i_mapEntry && i_mapEntry->IsContinent(); }
 
         // can't be NULL for loaded map

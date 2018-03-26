@@ -198,28 +198,6 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket & recv_data)
         data << float(ci->PowerMultiplier);                   // mana multiplier
         data << uint8(ci->RacialLeader);
 
-        /* TODO Fix SMSG_CREATURE_QUERY_RESPONSE with correct data from DB.
-        
-        WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 100);
-        data << uint32(entry);                              // creature entry
-        data << name;
-        data << uint8(0) << uint8(0) << uint8(0);           // name2, name3, name4, always empty
-        data << subName;
-        data << ci->IconName;                               // "Directions" for guard, string for Icons 2.3.0
-        data << uint32(ci->CreatureTypeFlags);              // flags
-        data << uint32(ci->CreatureType);                   // CreatureType.dbc
-        data << uint32(ci->Family);                         // CreatureFamily.dbc
-        data << uint32(ci->Rank);                           // Creature Rank (elite, boss, etc)
-        data << uint32(0);                                  // unknown        wdbFeild11
-        data << uint32(ci->PetSpellDataId);                 // Id from CreatureSpellData.dbc    wdbField12
-
-        for (int i = 0; i < MAX_CREATURE_MODEL; ++i)
-            data << uint32(ci->ModelId[i]);
-
-        data << float(ci->HealthMultiplier);                 // health multiplier
-        data << float(ci->PowerMultiplier);                   // mana multiplier
-        data << uint8(ci->RacialLeader);*/
-
         SendPacket(&data);
         DEBUG_LOG("WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
     }
@@ -311,16 +289,16 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket & /*recv_data*/)
     if (corpsemapid != _player->GetMapId())
     {
         // search entrance map for proper show entrance
-        if (MapEntry const* temp = sMapStore.LookupEntry(mapid))
+        if (MapEntry const* temp = sMapStorage.LookupEntry<MapEntry>(mapid))
         {
-            if (temp->IsDungeon() && temp->ghost_entrance_map >= 0)
+            if (temp->IsDungeon() && temp->ghostEntranceMap >= 0)
             {
                 // if corpse map have entrance
-                if (TerrainInfo const* entranceMap = sTerrainMgr.LoadTerrain(temp->ghost_entrance_map))
+                if (TerrainInfo const* entranceMap = sTerrainMgr.LoadTerrain(temp->ghostEntranceMap))
                 {
-                    mapid = temp->ghost_entrance_map;
-                    x = temp->ghost_entrance_x;
-                    y = temp->ghost_entrance_y;
+                    mapid = temp->ghostEntranceMap;
+                    x = temp->ghostEntranceX;
+                    y = temp->ghostEntranceY;
                     z = entranceMap->GetHeightStatic(x, y, MAX_HEIGHT);
                 }
             }

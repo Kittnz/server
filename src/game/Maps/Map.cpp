@@ -91,7 +91,7 @@ void Map::LoadMapAndVMap(int gx, int gy)
 }
 
 Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
-    : i_mapEntry(sMapStore.LookupEntry(id)),
+    : i_mapEntry(sMapStorage.LookupEntry<MapEntry>(id)),
       i_id(id), i_InstanceId(InstanceId), m_unloadTimer(0),
       m_VisibleDistance(DEFAULT_VISIBILITY_DISTANCE), m_persistentState(NULL),
       m_activeNonPlayersIter(m_activeNonPlayers.end()), _transportsUpdateIter(_transports.end()),
@@ -1372,7 +1372,7 @@ bool Map::CheckGridIntegrity(Creature* c, bool moved) const
 
 const char* Map::GetMapName() const
 {
-    return i_mapEntry ? i_mapEntry->name[sWorld.GetDefaultDbcLocale()] : "UNNAMEDMAP\x0";
+    return i_mapEntry ? i_mapEntry->name : "UNNAMEDMAP\x0";
 }
 
 void Map::UpdateObjectVisibility(WorldObject* obj, Cell cell, CellPair cellpair)
@@ -1679,11 +1679,16 @@ void Map::CreateInstanceData(bool load)
     if (i_data)
         return;
 
-    if (Instanceable())
+    /*if (Instanceable())
     {
         if (InstanceTemplate const* mInstance = ObjectMgr::GetInstanceTemplate(GetId()))
             i_script_id = mInstance->script_id;
-    }
+    }*/
+
+    if (!i_mapEntry->scriptId)
+        return;
+
+    i_script_id = i_mapEntry->scriptId;
 
     i_data = sScriptMgr.CreateInstanceData(this);
     if (!i_data)
@@ -2083,10 +2088,12 @@ void DungeonMap::SetResetSchedule(bool on)
 
 uint32 DungeonMap::GetMaxPlayers() const
 {
-    InstanceTemplate const* iTemplate = ObjectMgr::GetInstanceTemplate(GetId());
+    /*InstanceTemplate const* iTemplate = ObjectMgr::GetInstanceTemplate(GetId());
     if (!iTemplate)
         return 0;
-    return iTemplate->maxPlayers;
+    return iTemplate->maxPlayers;*/
+
+    return i_mapEntry->maxPlayers;
 }
 
 DungeonPersistentState* DungeonMap::GetPersistanceState() const
@@ -3454,7 +3461,7 @@ GameObject* Map::SummonGameObject(uint32 entry, float x, float y, float z, float
     return go;
 }
 
-bool Map::IsMountAllowed() const
+/*bool Map::IsMountAllowed() const
 {
     if (!IsDungeon())
         return true;
@@ -3463,4 +3470,4 @@ bool Map::IsMountAllowed() const
         return data->mountAllowed;
 
     return true;
-}
+}*/

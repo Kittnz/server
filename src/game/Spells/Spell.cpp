@@ -6158,24 +6158,18 @@ SpellCastResult Spell::CheckCast(bool strict)
                         return SPELL_FAILED_TARGET_IN_COMBAT;
 
                     // check if our map is dungeon
-                    uint32 mapId = m_caster->GetMapId();
-                    MapEntry const* map = sMapStore.LookupEntry(mapId);
-                    if (map->IsDungeon())
+                    const MapEntry *mapEntry = sMapStorage.LookupEntry<MapEntry>(m_caster->GetMapId());
+                    if (mapEntry && mapEntry->IsDungeon())
                     {
-                        InstanceTemplate const* instance = ObjectMgr::GetInstanceTemplate(mapId);
-                        if (!instance)
+                        if (m_caster->GetMap() != target->GetMap())
                             return SPELL_FAILED_TARGET_NOT_IN_INSTANCE;
-                        if (instance->levelMin > target->getLevel())
+                        if (mapEntry->levelMin > target->getLevel())
                             return SPELL_FAILED_LOWLEVEL;
-                        if (instance->levelMax && instance->levelMax < target->getLevel())
+                        if (mapEntry->levelMax && mapEntry->levelMax < target->getLevel())
                             return SPELL_FAILED_HIGHLEVEL;
-
-                        /*Difficulty difficulty = m_caster->GetMap()->GetDifficulty();
-                        if (InstancePlayerBind* targetBind = target->GetBoundInstance(mapId, difficulty))
-                            if (InstancePlayerBind* casterBind = caster->GetBoundInstance(mapId, difficulty))
-                                if (targetBind->perm && targetBind->state != casterBind->state)
-                                    return SPELL_FAILED_TARGET_LOCKED_TO_RAID_INSTANCE;*/
                     }
+                    else if (m_caster->ToPlayer()->InBattleGround())
+                        return SPELL_FAILED_NOT_HERE;
                 }
                 break;
             }
@@ -6193,15 +6187,14 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_BAD_TARGETS;
 
                 // check if our map is dungeon
-                const MapEntry *mapEntry = sMapStore.LookupEntry(m_caster->GetMapId());
+                const MapEntry *mapEntry = sMapStorage.LookupEntry<MapEntry>(m_caster->GetMapId());
                 if (mapEntry && mapEntry->IsDungeon())
                 {
-                    InstanceTemplate const* instance = ObjectMgr::GetInstanceTemplate(m_caster->GetMapId());
                     if (m_caster->GetMap() != target->GetMap())
                         return SPELL_FAILED_TARGET_NOT_IN_INSTANCE;
-                    if (instance->levelMin > target->getLevel())
+                    if (mapEntry->levelMin > target->getLevel())
                         return SPELL_FAILED_LOWLEVEL;
-                    if (instance->levelMax && instance->levelMax < target->getLevel())
+                    if (mapEntry->levelMax && mapEntry->levelMax < target->getLevel())
                         return SPELL_FAILED_HIGHLEVEL;
                 }
                 else if (m_caster->ToPlayer()->InBattleGround())
@@ -6245,10 +6238,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (m_caster->GetTypeId() == TYPEID_PLAYER && ((Player*)m_caster)->GetTransport())
                         return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
-                    MapEntry const* mEntry = sMapStore.LookupEntry(m_caster->GetMapId());
-                    Map* pMap = nullptr;
-
-                    if (m_caster->GetMapId() != 531 && m_caster->GetTypeId() == TYPEID_PLAYER && !pMap->IsMountAllowed() && !m_IsTriggeredSpell)
+                    if (m_caster->GetMapId() != 531 && m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStorage.LookupEntry<MapEntry>(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell)
                         return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
                     if (m_caster->GetAreaId() == 35)
@@ -6457,11 +6447,8 @@ SpellCastResult Spell::CheckCast(bool strict)
                         break;
                 }
 
-                MapEntry const* mEntry = sMapStore.LookupEntry(m_caster->GetMapId());
-                Map* pMap = nullptr;
-
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
-                if (!isAQ40Mount && m_caster->GetTypeId() == TYPEID_PLAYER && !pMap->IsMountAllowed() && !m_IsTriggeredSpell) //[-ZERO] && !m_spellInfo->AreaId)
+                if (!isAQ40Mount && m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStorage.LookupEntry<MapEntry>(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell) //[-ZERO] && !m_spellInfo->AreaId)
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
                 if (m_caster->GetAreaId() == 35)

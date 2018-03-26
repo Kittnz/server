@@ -297,8 +297,7 @@ bool ChatHandler::HandleGPSCommand(char* args)
     uint32 zone_id, area_id;
     obj->GetZoneAndAreaId(zone_id, area_id);
 
-    MapEntry const* mapEntry = sMapStore.LookupEntry(obj->GetMapId());
-
+    MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(obj->GetMapId());
     const auto *zoneEntry = AreaEntry::GetById(zone_id);
     const auto *areaEntry = AreaEntry::GetById(area_id);
 
@@ -349,7 +348,7 @@ bool ChatHandler::HandleGPSCommand(char* args)
     }
 
     PSendSysMessage(LANG_MAP_POSITION,
-                    obj->GetMapId(), (mapEntry ? mapEntry->name[GetSessionDbcLocale()] : "<unknown>"),
+                    obj->GetMapId(), (mapEntry ? mapEntry->name : "<unknown>"),
                     zone_id, zoneName.c_str(), area_id, areaName.c_str(),
                     obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), obj->GetOrientation(),
                     cell.GridX(), cell.GridY(), cell.CellX(), cell.CellY(), obj->GetInstanceId(),
@@ -367,7 +366,7 @@ bool ChatHandler::HandleGPSCommand(char* args)
         sObjectMgr.GetAreaLocaleString(areaEntry->Id, sWorld.GetDefaultDbcLocale(), &areaName);
 
     DEBUG_LOG(GetMangosString(LANG_MAP_POSITION),
-              obj->GetMapId(), (mapEntry ? mapEntry->name[sWorld.GetDefaultDbcLocale()] : "<unknown>"),
+              obj->GetMapId(), (mapEntry ? mapEntry->name : "<unknown>"),
               zone_id, zoneName.c_str(), area_id, areaName.c_str(),
               obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), obj->GetOrientation(),
               cell.GridX(), cell.GridY(), cell.CellX(), cell.CellY(), obj->GetInstanceId(),
@@ -1623,14 +1622,13 @@ bool ChatHandler::HandleLookupSoundCommand(char* args)
 
     uint32 counter = 0;                                     // Counter for figure out that we found smth.
 
-    // TODO
     for (uint32 id = 0; id < sObjectMgr.GetMaxSoundId(); ++id)
     {
         SoundEntriesEntry const *soundEntry = sObjectMgr.GetSoundEntry(id);
         if (soundEntry)
         {
             int loc = GetSessionDbcLocale();
-            std::string name = soundEntry->Name;
+            std::string name = soundEntry->InternalName;
 
             if (name.empty())
                 continue;
@@ -1641,9 +1639,9 @@ bool ChatHandler::HandleLookupSoundCommand(char* args)
                 continue;
 
             if (m_session)
-                PSendSysMessage(LANG_COMMAND_SOUND_LIST, id, id, soundEntry->Name.c_str());
+                PSendSysMessage(LANG_COMMAND_SOUND_LIST, id, id, soundEntry->InternalName);
             else
-                PSendSysMessage("%u - %s", id, soundEntry->Name.c_str());
+                PSendSysMessage("%u - %s", id, soundEntry->InternalName);
 
             counter++;
         }
@@ -2160,14 +2158,14 @@ bool ChatHandler::HandleGoZoneXYCommand(char* args)
     // update to parent zone if exist (client map show only zones without parents)
     const auto *zoneEntry = !areaEntry->IsZone() ? AreaEntry::GetById(areaEntry->ZoneId) : areaEntry;
 
-    MapEntry const* mapEntry = sMapStore.LookupEntry(zoneEntry->MapId);
+    MapEntry const *mapEntry = sMapStorage.LookupEntry<MapEntry>(zoneEntry->MapId);
 
     std::string areaName = areaEntry->Name;
     sObjectMgr.GetAreaLocaleString(areaEntry->Id, GetSessionDbLocaleIndex(), &areaName);
     if (mapEntry->Instanceable())
     {
         PSendSysMessage(LANG_INVALID_ZONE_MAP, areaEntry->Id, areaName.c_str(),
-                        mapEntry->MapID, mapEntry->name);
+                        mapEntry->id, mapEntry->name);
         SetSentErrorMessage(true);
         return false;
     }
@@ -2175,12 +2173,12 @@ bool ChatHandler::HandleGoZoneXYCommand(char* args)
     if (!Zone2MapCoordinates(x, y, zoneEntry->Id))
     {
         PSendSysMessage(LANG_INVALID_ZONE_MAP, areaEntry->Id, areaName.c_str(),
-                        mapEntry->MapID, mapEntry->name);
+                        mapEntry->id, mapEntry->name);
         SetSentErrorMessage(true);
         return false;
     }
 
-    return HandleGoHelper(_player, mapEntry->MapID, x, y);
+    return HandleGoHelper(_player, mapEntry->id, x, y);
 }
 
 //teleport to grid

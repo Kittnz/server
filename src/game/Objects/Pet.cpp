@@ -650,7 +650,7 @@ void Pet::SetDeathState(DeathState s)                       // overwrite virtual
 
         //lose happiness when died and not in BG
         const MapEntry *mapEntry = GetMap()->GetMapEntry();
-        if (!mapEntry || (mapEntry->map_type != MAP_BATTLEGROUND))
+        if (!mapEntry || (mapEntry->mapType != MAP_BATTLEGROUND))
             ModifyPower(POWER_HAPPINESS, -HAPPINESS_LEVEL_SIZE);
 
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);

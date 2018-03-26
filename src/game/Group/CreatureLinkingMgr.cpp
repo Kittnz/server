@@ -188,7 +188,7 @@ bool CreatureLinkingMgr::IsLinkingEntryValid(uint32 slaveEntry, CreatureLinkingI
             sLog.outErrorDb("`creature_linking_template` has a non existing master_entry (slave: %u, master %u), skipped", slaveEntry, pTmp->masterId);
             return false;
         }
-        if (pTmp->mapId && !sMapStore.LookupEntry(pTmp->mapId))
+        if (pTmp->mapId && !sMapStorage.LookupEntry<MapEntry>(pTmp->mapId))
         {
             sLog.outErrorDb("`creature_linking_template` has a non existing map %u (slave %u, master %u), skipped", pTmp->mapId, slaveEntry, pTmp->masterId);
             return false;

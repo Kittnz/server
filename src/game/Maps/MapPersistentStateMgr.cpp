@@ -58,7 +58,7 @@ MapEntry const* MapPersistentState::GetMapEntry() const
     if (m_usedByMap)
         return m_usedByMap->GetMapEntry();
 
-    return sMapStore.LookupEntry(m_mapid);
+    return sMapStorage.LookupEntry<MapEntry>(m_mapid);
 }
 
 /* true if the instance state is still valid */
@@ -277,7 +277,7 @@ time_t DungeonPersistentState::GetResetTimeForDB() const
 {
     // only state the reset time for normal instances
     const MapEntry *entry = GetMapEntry();
-    if (!entry || entry->map_type == MAP_RAID)
+    if (!entry || entry->mapType == MAP_RAID)
         return 0;
     else
         return GetResetTime();
@@ -294,15 +294,15 @@ bool BattleGroundPersistentState::CanBeUnload() const
 
 //== DungeonResetScheduler functions ======================
 
-uint32 DungeonResetScheduler::GetMaxResetTimeFor(InstanceTemplate const* temp)
+uint32 DungeonResetScheduler::GetMaxResetTimeFor(MapEntry const* temp)
 {
     if (!temp)
         return 0;
 
-    return temp->reset_delay * DAY;
+    return temp->resetDelay * DAY;
 }
 
-time_t DungeonResetScheduler::CalculateNextResetTime(InstanceTemplate const* temp, time_t prevResetTime)
+time_t DungeonResetScheduler::CalculateNextResetTime(MapEntry const* temp, time_t prevResetTime)
 {
     uint32 diff = sWorld.getConfig(CONFIG_UINT32_INSTANCE_RESET_TIME_HOUR) * HOUR;
     uint32 period = GetMaxResetTimeFor(temp);
@@ -337,7 +337,7 @@ void DungeonResetScheduler::LoadResetTimes()
             uint32 mapid = fields[1].GetUInt32();
             time_t resettime = time_t(fields[2].GetUInt64());
 
-            MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+            MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapid);
 
             if (!mapEntry || !mapEntry->IsDungeon())
             {
@@ -378,8 +378,7 @@ void DungeonResetScheduler::LoadResetTimes()
 
     // load the global respawn times for raid instances
     uint32 diff = sWorld.getConfig(CONFIG_UINT32_INSTANCE_RESET_TIME_HOUR) * HOUR;
-    m_resetTimeByMapId.resize(sMapStore.GetNumRows() + 1);
-
+    m_resetTimeByMapId.resize(sMapStorage.GetMaxEntry() + 1);
     result = CharacterDatabase.Query("SELECT mapid, resettime FROM instance_reset");
     if (result)
     {
@@ -388,7 +387,7 @@ void DungeonResetScheduler::LoadResetTimes()
             Field *fields = result->Fetch();
             uint32 mapid = fields[0].GetUInt32();
 
-            MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+            MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapid);
 
             if (!mapEntry || !mapEntry->IsDungeon())
             {
@@ -420,7 +419,6 @@ void DungeonResetScheduler::ScheduleAllDungeonResets()
 
     time_t now = time(nullptr);
     time_t today = (now / DAY) * DAY;
-    time_t nextWeek = today + (7 * DAY);
 
     // Reset times have already been updated and set in LoadResetTimes(). We just need to start
     // the initial reset events based on them. Since LoadResetTimes() is called before
@@ -454,57 +452,41 @@ void DungeonResetScheduler::ScheduleAllDungeonResets()
     }
 
     uint32 diff = sWorld.getConfig(CONFIG_UINT32_INSTANCE_RESET_TIME_HOUR) * HOUR;
-
     // calculate new global reset times for expired instances and those that have never been reset yet
     // add the global reset times to the priority queue
-    for (uint32 i = 0; i < sInstanceTemplate.GetMaxEntry(); i++)
+    for (auto itr = sMapStorage.begin<MapEntry>(); itr < sMapStorage.end<MapEntry>(); ++itr)
     {
-        InstanceTemplate const* temp = ObjectMgr::GetInstanceTemplate(i);
-        if (!temp)
+        // only raid maps have a global reset time
+        if (!itr->IsDungeon() || !itr->resetDelay)
             continue;
 
-        // only raid/heroic maps have a global reset time
-        MapEntry const* mapEntry = sMapStore.LookupEntry(temp->map);
-        if (!mapEntry || !mapEntry->IsDungeon() || !mapEntry->HasResetTime())
-            continue;
-
-        uint32 period = GetMaxResetTimeFor(temp);
-        time_t t = GetResetTimeFor(temp->map);
+        uint32 period = GetMaxResetTimeFor(*itr);
+        time_t t = GetResetTimeFor(itr->id);
         if (!t)
         {
             // initialize the reset time
-            // generate time by config on first server launch
-            tm localTm = *localtime(&now);
-            localTm.tm_hour = sWorld.getConfig(CONFIG_UINT32_QUEST_DAILY_RESET_HOUR);
-            localTm.tm_min = 0;
-            localTm.tm_sec = 0;
-            if (period > DAY) // resets bigger than 1 day start on config day
-                localTm.tm_mday += ((7 - localTm.tm_wday + sWorld.getConfig(CONFIG_UINT32_ARENA_FIRST_RESET_DAY)) % 7);
-            else // resets day and less start on next day
-                localTm.tm_mday += 1;
-            localTm.tm_isdst = -1;
-            t = mktime(&localTm);
-            CharacterDatabase.DirectPExecute("INSERT INTO instance_reset VALUES ('%u','" UI64FMTD "')", temp->map, (uint64)t);
+            t = today + period + diff;
+            CharacterDatabase.DirectPExecute("INSERT INTO instance_reset VALUES ('%u','" UI64FMTD "')", itr->id, (uint64)t);
         }
 
-        if (t < now || t > nextWeek)
+        if (t < now)
         {
             // assume that expired instances have already been cleaned
             // calculate the next reset time
             t = (t / DAY) * DAY;
             t += ((today - t) / period + 1) * period + diff;
-            CharacterDatabase.DirectPExecute("UPDATE instance_reset SET resettime = '" UI64FMTD "' WHERE mapid = '%u'", (uint64)t, temp->map);
+            CharacterDatabase.DirectPExecute("UPDATE instance_reset SET resettime = '" UI64FMTD "' WHERE mapid = '%u'", (uint64)t, itr->id);
         }
 
-        SetResetTimeFor(temp->map, t);
+        SetResetTimeFor(itr->id, t);
 
         // schedule the global reset/warning
         ResetEventType type = RESET_EVENT_INFORM_1;
         for (; type < RESET_EVENT_INFORM_LAST; type = ResetEventType(type + 1))
-            if (t > time_t(now + resetEventTypeDelay[type]))
+            if (t - resetEventTypeDelay[type] > now)
                 break;
 
-        ScheduleReset(true, t - resetEventTypeDelay[type], DungeonResetEvent(type, temp->map, 0));
+        ScheduleReset(true, t - resetEventTypeDelay[type], DungeonResetEvent(type, itr->id, 0));
     }
 }
 
@@ -576,7 +558,7 @@ void DungeonResetScheduler::Update()
             {
                 // re-schedule the next/new global reset/warning
                 // calculate the next reset time
-                InstanceTemplate const* instanceTemplate = ObjectMgr::GetInstanceTemplate(event.mapid);
+                MapEntry const* instanceTemplate = sMapStorage.LookupEntry<MapEntry>(event.mapid);
                 MANGOS_ASSERT(instanceTemplate);
 
                 time_t next_reset = DungeonResetScheduler::CalculateNextResetTime(instanceTemplate, resetTime);
@@ -622,46 +604,46 @@ MapPersistentStateManager::~MapPersistentStateManager()
 */
 MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const* mapEntry, uint32 instanceId, time_t resetTime, bool canReset, bool load /*=false*/, bool initPools /*= true*/)
 {
-    if (MapPersistentState *old_save = GetPersistentState(mapEntry->MapID, instanceId))
+    if (MapPersistentState *old_save = GetPersistentState(mapEntry->id, instanceId))
     {
-        if (instanceId && old_save->GetMapId() != mapEntry->MapID)
+        if (instanceId && old_save->GetMapId() != mapEntry->id)
             sLog.outError("MapPersistentStateManager::AddPersistentState: instance %u has existing map ID '%u', but map to add for is '%u'. Mismatched states are loaded",
-                instanceId, old_save->GetMapId(), mapEntry->MapID);
+                instanceId, old_save->GetMapId(), mapEntry->id);
 
         return old_save;
     }
 
-    DEBUG_LOG("MapPersistentStateManager::AddPersistentState: mapid = %d, instanceid = %d, reset time = %u, canRset = %u", mapEntry->MapID, instanceId, resetTime, canReset ? 1 : 0);
+    DEBUG_LOG("MapPersistentStateManager::AddPersistentState: mapid = %d, instanceid = %d, reset time = %u, canRset = %u", mapEntry->id, instanceId, resetTime, canReset ? 1 : 0);
 
     MapPersistentState *state;
     if (mapEntry->IsDungeon())
     {
-        DungeonPersistentState* dungeonState = new DungeonPersistentState(mapEntry->MapID, instanceId, resetTime, canReset);
+        DungeonPersistentState* dungeonState = new DungeonPersistentState(mapEntry->id, instanceId, resetTime, canReset);
         if (!load)
         {
             // initialize reset time
             // for normal instances if no creatures are killed the instance will reset in two hours
-            if (mapEntry->map_type != MAP_RAID)
+            if (mapEntry->mapType != MAP_RAID)
             {
                 if (!resetTime)
                     resetTime = time(nullptr) + 2 * HOUR;
                 dungeonState->SetResetTime(resetTime);
                 // Schedule a reset for new instances, removed when a player enters in DungeonMap::Add
-                m_Scheduler.ScheduleReset(true, resetTime, DungeonResetEvent(RESET_EVENT_NORMAL_DUNGEON, mapEntry->MapID, instanceId));
+                m_Scheduler.ScheduleReset(true, resetTime, DungeonResetEvent(RESET_EVENT_NORMAL_DUNGEON, mapEntry->id, instanceId));
             }
             dungeonState->SaveToDB();
         }
         state = dungeonState;
     }
     else if (mapEntry->IsBattleGround())
-        state = new BattleGroundPersistentState(mapEntry->MapID, instanceId);
+        state = new BattleGroundPersistentState(mapEntry->id, instanceId);
     else
-        state = new WorldPersistentState(mapEntry->MapID, instanceId);
+        state = new WorldPersistentState(mapEntry->id, instanceId);
 
     if (instanceId)
         m_instanceSaveByInstanceId[instanceId] = state;
     else
-        m_instanceSaveByMapId[mapEntry->MapID] = state;
+        m_instanceSaveByMapId[mapEntry->id] = state;
 
     if (initPools)
         state->InitPools();
@@ -923,7 +905,7 @@ struct MapPersistantStateWarnWorker
 void MapPersistentStateManager::_ResetOrWarnAll(uint32 mapid, bool warn, uint32 timeLeft)
 {
     // global reset for all instances of the given map
-    MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+    MapEntry const *mapEntry = sMapStorage.LookupEntry<MapEntry>(mapid);
     if (!mapEntry->IsDungeon())
         return;
 
@@ -932,8 +914,7 @@ void MapPersistentStateManager::_ResetOrWarnAll(uint32 mapid, bool warn, uint32 
     if (!warn)
     {
         // this is called one minute before the reset time
-        InstanceTemplate const* temp = ObjectMgr::GetInstanceTemplate(mapid);
-        if (!temp->reset_delay)
+        if (!mapEntry->resetDelay)
         {
             sLog.outError("MapPersistentStateManager::ResetOrWarnAll: no instance template or reset delay for map %d", mapid);
             return;
@@ -963,7 +944,7 @@ void MapPersistentStateManager::_ResetOrWarnAll(uint32 mapid, bool warn, uint32 
         CharacterDatabase.CommitTransaction();
 
         // calculate the next reset time
-        time_t next_reset = DungeonResetScheduler::CalculateNextResetTime(temp, now + timeLeft);
+        time_t next_reset = DungeonResetScheduler::CalculateNextResetTime(mapEntry, now + timeLeft);
         // update it in the DB
         CharacterDatabase.PExecute("UPDATE instance_reset SET resettime = '" UI64FMTD "' WHERE mapid = '%u'", (uint64)next_reset, mapid);
         return;
@@ -1036,7 +1017,7 @@ void MapPersistentStateManager::LoadCreatureRespawnTimes()
         if (mapId != data->mapid)
             continue;
 
-        MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
+        MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapId);
         if (!mapEntry)
             continue;
 
@@ -1045,12 +1026,12 @@ void MapPersistentStateManager::LoadCreatureRespawnTimes()
         // Special case for instanciated continents
         if (sWorld.getConfig(CONFIG_BOOL_CONTINENTS_INSTANCIATE))
         {
-            if (mapEntry->MapID == 0)
+            if (mapEntry->id == 0)
             {
                 beginInstance = MAP0_FIRST;
                 endInstance = MAP0_LAST;
             }
-            if (mapEntry->MapID == 1)
+            if (mapEntry->id == 1)
             {
                 beginInstance = MAP1_FIRST;
                 endInstance = MAP1_LAST;
@@ -1119,19 +1100,19 @@ void MapPersistentStateManager::LoadGameobjectRespawnTimes()
         if (mapId != data->mapid)
             continue;
 
-        MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
+        MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapId);
         if (!mapEntry)
             continue;
 
         int beginInstance = instanceId;
         int endInstance = instanceId + 1;
 
-        if (mapEntry->MapID == 0)
+        if (mapEntry->id == 0)
         {
             beginInstance = MAP0_FIRST;
             endInstance = MAP0_LAST;
         }
-        if (mapEntry->MapID == 1)
+        if (mapEntry->id == 1)
         {
             beginInstance = MAP1_FIRST;
             endInstance = MAP1_LAST;

@@ -615,7 +615,7 @@ struct MailTemplateEntry
     char*       content[16];                                // 18-33    m_body_lang
 };
 
-struct MapEntry
+/*struct MapEntry
 {
     uint32  MapID;                                          // 0        m_ID
     // char*       internalname;                            // 1        m_Directory
@@ -665,7 +665,7 @@ struct MapEntry
     {
         return MapID == 0 || MapID == 1 || MapID == 530;
     }
-};
+};*/
 
 struct QuestSortEntry
 {

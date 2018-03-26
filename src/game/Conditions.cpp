@@ -977,7 +977,7 @@ bool ConditionEntry::IsValid()
         }
         case CONDITION_MAP_ID:
         {
-            if (!sMapStore.LookupEntry(m_value1))
+            if (!sMapStorage.LookupEntry<MapEntry>(m_value1))
             {
                 sLog.outErrorDb("Current map condition (entry %u, type %u) has invalid Map ID %u", m_entry, m_condition, m_value1);
                 return false;

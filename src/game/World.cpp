@@ -1156,12 +1156,15 @@ void World::SetInitialWorldSettings()
     bool isMapServer = getConfig(CONFIG_BOOL_IS_MAPSERVER);
 
     ///- Check the existence of the map files for all races start areas.
-    if (!MapManager::ExistMapAndVMap(0, -6240.32f, 331.033f) ||
-            !MapManager::ExistMapAndVMap(0, -8949.95f, -132.493f) ||
-            !MapManager::ExistMapAndVMap(1, -618.518f, -4251.67f) ||
-            !MapManager::ExistMapAndVMap(0, 1676.35f, 1677.45f) ||
-            !MapManager::ExistMapAndVMap(1, 10311.3f, 832.463f) ||
-            !MapManager::ExistMapAndVMap(1, -2917.58f, -257.98f))
+    if (!MapManager::ExistMapAndVMap(0, -6240.32f, 331.033f) ||                     // Dwarf/ Gnome
+        !MapManager::ExistMapAndVMap(0, -8949.95f, -132.493f) ||                // Human
+        !MapManager::ExistMapAndVMap(1, -618.518f, -4251.67f) ||                // Orc
+        !MapManager::ExistMapAndVMap(0, 1676.35f, 1677.45f) ||                  // Scourge
+        !MapManager::ExistMapAndVMap(1, 10311.3f, 832.463f) ||                  // NightElf
+        !MapManager::ExistMapAndVMap(1, -2917.58f, -257.98f) ||                 // Tauren
+        (m_configUint32Values[CONFIG_UINT32_EXPANSION] >= EXPANSION_TBC &&
+        (!MapManager::ExistMapAndVMap(530, 10349.6f, -6357.29f) ||             // BloodElf
+            !MapManager::ExistMapAndVMap(530, -3961.64f, -13931.2f))))             // Draenei
     {
         sLog.outError("Correct *.map files not found in path '%smaps' or *.vmtree/*.vmtile files in '%svmaps'. Please place *.map and vmap files in appropriate directories or correct the DataDir value in the mangosd.conf file.", m_dataPath.c_str(), m_dataPath.c_str());
         Log::WaitBeforeContinueIfNeed();
@@ -1211,8 +1214,8 @@ void World::SetInitialWorldSettings()
     sLog.outString();
     sObjectMgr.LoadFactions();
 
-    sLog.outString();
-    sObjectMgr.LoadSoundEntries();
+    //sLog.outString();
+    //sObjectMgr.LoadSoundEntries();
 
     ///- Load the DBC files
     sLog.outString("Initialize data stores...");
@@ -1232,8 +1235,8 @@ void World::SetInitialWorldSettings()
     sLog.outString("Loading `spell_mod` and `spell_effect_mod`...");
     sSpellModMgr.LoadSpellMods();
 
-    sLog.outString("Loading InstanceTemplate...");
-    sObjectMgr.LoadInstanceTemplate();
+    /*sLog.outString("Loading InstanceTemplate...");
+    sObjectMgr.LoadInstanceTemplate();*/
 
     sLog.outString("Loading SkillLineAbilityMultiMap Data...");
     sSpellMgr.LoadSkillLineAbilityMap();
@@ -1484,8 +1487,8 @@ void World::SetInitialWorldSettings()
     sLog.outString("Loading Skill Fishing base level requirements...");
     sObjectMgr.LoadFishingBaseSkillLevel();
 
-    sLog.outString("Loading Instance encounters data...");  // must be after Creature loading
-    sObjectMgr.LoadInstanceEncounters();
+    /*sLog.outString("Loading Instance encounters data...");  // must be after Creature loading
+    sObjectMgr.LoadInstanceEncounters();*/
 
     sLog.outString("Loading Npc Text Id...");
     sObjectMgr.LoadNpcGossips();                            // must be after load Creature and LoadNPCText

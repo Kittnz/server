@@ -1897,7 +1897,7 @@ void Group::ResetInstances(InstanceResetMethod method, Player* SendMsgTo)
     for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
     {
         DungeonPersistentState *state = itr->second.state;
-        MapEntry const* entry = sMapStore.LookupEntry(itr->first);
+        const MapEntry *entry = sMapStorage.LookupEntry<MapEntry>(itr->first);
         if (!entry || (!state->CanReset() && method != INSTANCE_RESET_GROUP_DISBAND))
         {
             ++itr;
@@ -1907,7 +1907,7 @@ void Group::ResetInstances(InstanceResetMethod method, Player* SendMsgTo)
         if (method == INSTANCE_RESET_ALL)
         {
             // the "reset all instances" method can only reset normal maps
-            if (entry->map_type == MAP_RAID)
+            if (entry->mapType == MAP_RAID)
             {
                 ++itr;
                 continue;
@@ -1970,7 +1970,7 @@ void Group::ResetInstances(InstanceResetMethod method, Player* SendMsgTo)
 
 InstanceGroupBind* Group::GetBoundInstance(uint32 mapid)
 {
-    MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+    MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapid);
     if (!mapEntry)
         return nullptr;
 
@@ -2133,8 +2133,8 @@ void Group::RewardGroupAtKill(Unit* pVictim, Player* player_tap)
 
         /// skip in check PvP case (for speed, not used)
 
-        bool is_raid = PvP ? false : sMapStore.LookupEntry(pVictim->GetMapId())->IsRaid() && isRaidGroup();
-        bool is_dungeon = PvP ? false : sMapStore.LookupEntry(pVictim->GetMapId())->IsDungeon();
+        bool is_raid = PvP ? false : sMapStorage.LookupEntry<MapEntry>(pVictim->GetMapId())->IsRaid() && isRaidGroup();
+        bool is_dungeon = PvP ? false : sMapStorage.LookupEntry<MapEntry>(pVictim->GetMapId())->IsDungeon();
         float group_rate = MaNGOS::XP::xp_in_group_rate(count, is_raid);
 
         for (GroupReference *itr = GetFirstMember(); itr != NULL; itr = itr->next())

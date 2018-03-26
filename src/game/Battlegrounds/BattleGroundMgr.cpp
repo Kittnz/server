@@ -1329,8 +1329,8 @@ void BattleGroundMgr::CreateInitialBattleGrounds()
         uint32 mapId = GetBattleGrounMapIdByTypeId(bgTypeID);
         char const* name;
 
-        if (MapEntry const* mapEntry = sMapStore.LookupEntry(mapId))
-            name = mapEntry->name[sWorld.GetDefaultDbcLocale()];
+        if (MapEntry const* mapEntry = sMapStorage.LookupEntry<MapEntry>(mapId))
+            name = mapEntry->name;
         else
         {
             sLog.outErrorDb("Table `battleground_template` for id %u associated with nonexistent map id %u.", bgTypeID, mapId);

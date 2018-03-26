@@ -133,11 +133,26 @@ struct BroadcastText
 
 typedef std::unordered_map<uint32, BroadcastText> BroadcastTextLocaleMap;
 
-struct SoundEntriesEntry
+/*struct SoundEntriesEntry
 {
     uint32          Id;                                     // 0        m_ID
     // uint32    Type;                                      // 1        m_soundType
     std::string     Name;                                   // 2        m_name
+    // char*     FileName[10];                              // 3-12     m_File[10]
+    // uint32    Unk13[10];                                 // 13-22    m_Freq[10]
+    // char*     Path;                                      // 23       m_DirectoryBase
+    // 24       m_volumeFloat
+    // 25       m_flags
+    // 26       m_minDistance
+    // 27       m_distanceCutoff
+    // 28       m_EAXDef
+};*/
+
+struct SoundEntriesEntry
+{
+    uint32    Id;                                           // 0        m_ID
+    // uint32    Type;                                      // 1        m_soundType
+    char*     InternalName;                                 // 2        m_name
     // char*     FileName[10];                              // 3-12     m_File[10]
     // uint32    Unk13[10];                                 // 13-22    m_Freq[10]
     // char*     Path;                                      // 23       m_DirectoryBase
@@ -643,7 +658,7 @@ class ObjectMgr
 
         static ItemPrototype const* GetItemPrototype(uint32 id) { return sItemStorage.LookupEntry<ItemPrototype>(id); }
 
-        static InstanceTemplate const* GetInstanceTemplate(uint32 map);
+        //static InstanceTemplate const* GetInstanceTemplate(uint32 map);
 
         PetLevelInfo const* GetPetLevelInfo(uint32 creature_id, uint32 level) const;
 
@@ -808,9 +823,9 @@ class ObjectMgr
         void LoadPageTextLocales();
         void LoadGossipMenuItemsLocales();
         void LoadPointOfInterestLocales();
-        void LoadInstanceEncounters();
-        void LoadInstanceTemplate();
-        //void LoadMapTemplate();
+        /*void LoadInstanceEncounters();
+        void LoadInstanceTemplate();*/
+        void LoadMapTemplate();
         void LoadConditions();
         void LoadAreaTemplate();
         void LoadAreaLocales();

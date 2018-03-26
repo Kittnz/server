@@ -98,7 +98,7 @@ extern DBCStorage <ItemSetEntry>                 sItemSetStore;
 extern DBCStorage <LiquidTypeEntry>              sLiquidTypeStore;
 extern DBCStorage <LockEntry>                    sLockStore;
 extern DBCStorage <MailTemplateEntry>            sMailTemplateStore;
-extern DBCStorage <MapEntry>                     sMapStore;
+//extern DBCStorage <MapEntry>                     sMapStore;
 extern DBCStorage <QuestSortEntry>               sQuestSortStore;
 extern DBCStorage <SkillLineEntry>               sSkillLineStore;
 extern DBCStorage <SkillLineAbilityEntry>        sSkillLineAbilityStore;
