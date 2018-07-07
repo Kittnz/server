@@ -7311,12 +7311,12 @@ bool Unit::IsInDisallowedMountForm() const
     if (!displayExtra)
         return true;
 
-    /*CreatureModelDataEntry const* model = sCreatureModelDataStore.LookupEntry(display->ModelId);
+    CreatureModelDataEntry const* model = sCreatureModelDataStore.LookupEntry(display->ModelId);
     ChrRacesEntry const* race = sChrRacesStore.LookupEntry(displayExtra->Race);
 
     if (model && !(model->flags & 0x80))
         if (race && !(race->Flags & 0x4))
-            return true;*/
+            return true;
 
     return false;
 }
