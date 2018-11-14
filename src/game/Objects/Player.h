@@ -348,7 +348,7 @@ enum PlayerFlags
     PLAYER_FLAGS_COMMENTATOR            = 0x00080000,       // first appeared in TBC
 };
 
-// used for PLAYER__FIELD_KNOWN_TITLES field (uint64), (1<<bit_index) without (-1)
+// used for PLAYER_FIELD_KNOWN_TITLES field (uint64), (1<<bit_index) without (-1)
 // can't use enum for uint64 values
 #define PLAYER_TITLE_DISABLED              uint64(0x0000000000000000)
 #define PLAYER_TITLE_NONE                  uint64(0x0000000000000001)

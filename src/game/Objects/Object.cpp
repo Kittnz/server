@@ -274,7 +274,7 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData *data, Player *target) c
     if (!target)
         return;
 
-    uint8  updatetype   = UPDATETYPE_CREATE_OBJECT;
+    uint8 updatetype   = UPDATETYPE_CREATE_OBJECT;
     uint8 updateFlags  = m_updateFlag;
 
     /** lower flag1 **/
@@ -410,7 +410,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
 {
     *data << uint8(updateFlags);                            // update flags
 
-                                                            // 0x20
+    // 0x20
     if (updateFlags & UPDATEFLAG_LIVING)
     {
         Unit* unit = ((Unit*)this);
@@ -447,7 +447,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
     else if (updateFlags & UPDATEFLAG_HAS_POSITION)
     {
         // 0x02
-        if (updateFlags & UPDATEFLAG_TRANSPORT && ((GameObject*)this)->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
+        /*if (updateFlags & UPDATEFLAG_TRANSPORT && ((GameObject*)this)->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
         {
             *data << float(0);
             *data << float(0);
@@ -455,12 +455,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
             *data << float(((WorldObject*)this)->GetOrientation());
         }
         else
-        {
+        {*/
             *data << float(((WorldObject*)this)->GetPositionX());
             *data << float(((WorldObject*)this)->GetPositionY());
             *data << float(((WorldObject*)this)->GetPositionZ());
             *data << float(((WorldObject*)this)->GetOrientation());
-        }
+        //}
     }
 
     // 0x8
@@ -674,7 +674,7 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
                         if (appendValue & UNIT_NPC_FLAG_TRAINER)
                         {
                             if (!((Creature*)this)->IsTrainerOf(target, false))
-                                appendValue &= ~UNIT_NPC_FLAG_TRAINER;
+                                appendValue &= ~(UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_TRAINER_CLASS | UNIT_NPC_FLAG_TRAINER_PROFESSION);
                         }
 
                         if (appendValue & UNIT_NPC_FLAG_STABLEMASTER)
@@ -725,8 +725,8 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
                          (index >= UNIT_FIELD_POSSTAT0    && index <= UNIT_FIELD_POSSTAT4))
                     *data << uint32(m_floatValues[index]);
                 // Video maker - hide unit name, etc ...
-                else if (index == UNIT_FIELD_FLAGS && target->HasOption(PLAYER_VIDEO_MODE) && target != this)
-                    *data << (m_uint32Values[index] | UNIT_FLAG_NOT_SELECTABLE);
+                /*else if (index == UNIT_FIELD_FLAGS && target->HasOption(PLAYER_VIDEO_MODE) && target != this)
+                    *data << (m_uint32Values[index] | UNIT_FLAG_NOT_SELECTABLE);*/
                 // Gamemasters should be always able to select units and view auras
                 else if (index == UNIT_FIELD_FLAGS && target->isGameMaster())
                     *data << (m_uint32Values[index] & ~UNIT_FLAG_NOT_SELECTABLE);
@@ -767,7 +767,7 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
                     *data << dynamicFlags;
                 }
                 // RAID ally-horde - Faction
-                else if (index == UNIT_FIELD_FACTIONTEMPLATE)
+                /*else if (index == UNIT_FIELD_FACTIONTEMPLATE)
                 {
                     Player* owner = ((Unit*)this)->GetCharmerOrOwnerPlayerOrPlayerItself();
                     bool forceFriendly = false;
@@ -819,13 +819,13 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
                             *data << pct;
                         }
                     }
-                }
-                else if (target == this && (index == PLAYER_TRACK_CREATURES || index == PLAYER_TRACK_RESOURCES))
+                }*/
+                /*else if (target == this && (index == PLAYER_TRACK_CREATURES || index == PLAYER_TRACK_RESOURCES))
                 {
                     //if (WardenInterface* base = target->GetSession()->GetWarden())
                         //base->TrackingUpdateSent(index, m_uint32Values[index]);
                     *data << m_uint32Values[index];
-                }
+                }*/
                 else
                 {
                     // send in current format (float as float, uint32 as uint32)
@@ -874,7 +874,7 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
         {
             if (updateMask->GetBit(index))
             {
-                if (index == CORPSE_FIELD_DYNAMIC_FLAGS)
+                /*if (index == CORPSE_FIELD_DYNAMIC_FLAGS)
                 {
                     uint32 dynFlags = m_uint32Values[CORPSE_FIELD_DYNAMIC_FLAGS];
                     if (Corpse const* corpse = ToCorpse())
@@ -888,7 +888,7 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
                     }
                     *data << dynFlags;
                 }
-                else
+                else*/
                     // send in current format (float as float, uint32 as uint32)
                     *data << m_uint32Values[index];
             }

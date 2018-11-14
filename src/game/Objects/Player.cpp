@@ -2980,7 +2980,11 @@ void Player::InitStatsForLevel(bool reapplyMods)
 
     InitStatBuffMods();
 
-    //[-ZERO] SetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS,0);
+    //reset rating fields values
+    for (uint16 index = PLAYER_FIELD_COMBAT_RATING_1; index < PLAYER_FIELD_COMBAT_RATING_1 + MAX_COMBAT_RATING; ++index)
+        SetUInt32Value(index, 0);
+
+    SetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS,0);
     for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
     {
         SetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + i, 0);
@@ -2989,9 +2993,8 @@ void Player::InitStatsForLevel(bool reapplyMods)
     }
 
     //reset attack power, damage and attack speed fields
-    SetFloatValue(UNIT_FIELD_BASEATTACKTIME, 2000.0f);
-    SetFloatValue(UNIT_FIELD_BASEATTACKTIME + 1, 2000.0f);  // offhand attack time
-    SetFloatValue(UNIT_FIELD_RANGEDATTACKTIME, 2000.0f);
+    for (uint8 i = BASE_ATTACK; i < MAX_ATTACK; ++i)
+        SetFloatValue(UNIT_FIELD_BASEATTACKTIME + i, float(BASE_ATTACK_TIME));
 
     SetFloatValue(UNIT_FIELD_MINDAMAGE, 0.0f);
     SetFloatValue(UNIT_FIELD_MAXDAMAGE, 0.0f);
@@ -3033,8 +3036,8 @@ void Player::InitStatsForLevel(bool reapplyMods)
         SetResistanceBuffMods(SpellSchools(i), false, 0.0f);
     }
 
-//[-ZERO]    SetUInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE,0);
-//[-ZERO]    SetUInt32Value(PLAYER_FIELD_MOD_TARGET_PHYSICAL_RESISTANCE,0);
+    SetUInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE,0);
+    SetUInt32Value(PLAYER_FIELD_MOD_TARGET_PHYSICAL_RESISTANCE,0);
     for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
     {
         SetUInt32Value(UNIT_FIELD_POWER_COST_MODIFIER + i, 0);
@@ -3087,159 +3090,6 @@ void Player::InitStatsForLevel(bool reapplyMods)
     if (Pet* pet = GetPet())
         pet->SynchronizeLevelWithOwner();
 }
-
-/*void Player::InitStatsForLevel(bool reapplyMods)
-{
-    if (reapplyMods)                                        // reapply stats values only on .reset stats (level) command
-        _RemoveAllStatBonuses();
-
-    PlayerClassLevelInfo classInfo;
-
-    uint32 level = getLevel();
-    uint32 plClass = getClass();
-    sObjectMgr.GetPlayerClassLevelInfo(plClass, level, &classInfo);
-
-    PlayerLevelInfo info;
-    sObjectMgr.GetPlayerLevelInfo(getRace(), plClass, level, &info);
-
-    SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
-    SetUInt32Value(PLAYER_NEXT_LEVEL_XP, sObjectMgr.GetXPForLevel(level));
-
-    // reset before any aura state sources (health set/aura apply)
-    SetUInt32Value(UNIT_FIELD_AURASTATE, 0);
-
-    UpdateSkillsForLevel();
-
-    // set default cast time multiplier
-    SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
-
-    // save base values (bonuses already included in stored stats
-    for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)
-        SetCreateStat(Stats(i), info.stats[i]);
-
-    for (int i = STAT_STRENGTH; i < MAX_STATS; ++i)
-        SetStat(Stats(i), info.stats[i]);
-
-    SetCreateHealth(classInfo.basehealth);
-
-    // set create powers
-    SetCreateMana(classInfo.basemana);
-
-    SetArmor(int32(m_createStats[STAT_AGILITY] * 2));
-
-    InitStatBuffMods();
-
-    // reset rating fields values
-    for (uint16 index = PLAYER_FIELD_COMBAT_RATING_1; index < PLAYER_FIELD_COMBAT_RATING_1 + MAX_COMBAT_RATING; ++index)
-        SetUInt32Value(index, 0);
-
-    SetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS, 0);
-    for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
-    {
-        SetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + i, 0);
-        SetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + i, 0);
-        SetFloatValue(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + i, 1.00f);
-    }
-
-    // reset attack power, damage and attack speed fields
-    SetFloatValue(UNIT_FIELD_BASEATTACKTIME, 2000.0f);
-    SetFloatValue(UNIT_FIELD_BASEATTACKTIME + 1, 2000.0f);  // offhand attack time
-    SetFloatValue(UNIT_FIELD_RANGEDATTACKTIME, 2000.0f);
-
-    SetFloatValue(UNIT_FIELD_MINDAMAGE, 0.0f);
-    SetFloatValue(UNIT_FIELD_MAXDAMAGE, 0.0f);
-    SetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE, 0.0f);
-    SetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE, 0.0f);
-    SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, 0.0f);
-    SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, 0.0f);
-
-    SetInt32Value(UNIT_FIELD_ATTACK_POWER, 0);
-    SetInt32Value(UNIT_FIELD_ATTACK_POWER_MODS, 0);
-    SetFloatValue(UNIT_FIELD_ATTACK_POWER_MULTIPLIER, 0.0f);
-    SetInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER, 0);
-    SetInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER_MODS, 0);
-    SetFloatValue(UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER, 0.0f);
-
-    // Base crit values (will be recalculated in UpdateAllStats() at loading and in _ApplyAllStatBonuses() at reset
-    SetFloatValue(PLAYER_CRIT_PERCENTAGE, 0.0f);
-    SetFloatValue(PLAYER_OFFHAND_CRIT_PERCENTAGE, 0.0f);
-    SetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE, 0.0f);
-
-    // Init spell schools (will be recalculated in UpdateAllStats() at loading and in _ApplyAllStatBonuses() at reset
-    for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
-        SetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1 + i, 0.0f);
-
-    SetFloatValue(PLAYER_PARRY_PERCENTAGE, 0.0f);
-    SetFloatValue(PLAYER_BLOCK_PERCENTAGE, 0.0f);
-    SetUInt32Value(PLAYER_SHIELD_BLOCK, 0);
-
-    // Dodge percentage
-    SetFloatValue(PLAYER_DODGE_PERCENTAGE, 0.0f);
-
-    // set armor (resistance 0) to original value (create_agility*2)
-    SetArmor(int32(m_createStats[STAT_AGILITY] * 2));
-    SetResistanceBuffMods(SpellSchools(0), true, 0.0f);
-    SetResistanceBuffMods(SpellSchools(0), false, 0.0f);
-    // set other resistance to original value (0)
-    for (int i = 1; i < MAX_SPELL_SCHOOL; ++i)
-    {
-        SetResistance(SpellSchools(i), 0);
-        SetResistanceBuffMods(SpellSchools(i), true, 0.0f);
-        SetResistanceBuffMods(SpellSchools(i), false, 0.0f);
-    }
-
-    SetUInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE, 0);
-    SetUInt32Value(PLAYER_FIELD_MOD_TARGET_PHYSICAL_RESISTANCE, 0);
-    for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
-    {
-        SetUInt32Value(UNIT_FIELD_POWER_COST_MODIFIER + i, 0);
-        SetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + i, 0.0f);
-    }
-    // Init data for form but skip reapply item mods for form
-    InitDataForForm(reapplyMods);
-
-    // save new stats
-    for (int i = POWER_MANA; i < MAX_POWERS; ++i)
-        SetMaxPower(Powers(i), GetCreatePowers(Powers(i)));
-
-    SetMaxHealth(classInfo.basehealth);                     // stamina bonus will applied later
-
-                                                            // cleanup mounted state (it will set correctly at aura loading if player saved at mount.
-    SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, 0);
-
-    // cleanup unit flags (will be re-applied if need at aura load).
-    RemoveFlag(UNIT_FIELD_FLAGS,
-        UNIT_FLAG_UNK_0 | UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_NOT_ATTACKABLE_1 |
-        UNIT_FLAG_IMMUNE_TO_PLAYER | UNIT_FLAG_PASSIVE | UNIT_FLAG_LOOTING |
-        UNIT_FLAG_PET_IN_COMBAT | UNIT_FLAG_SILENCED | UNIT_FLAG_PACIFIED |
-        UNIT_FLAG_STUNNED | UNIT_FLAG_IN_COMBAT | UNIT_FLAG_DISARMED |
-        UNIT_FLAG_CONFUSED | UNIT_FLAG_FLEEING | UNIT_FLAG_POSSESSED |
-        UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_SKINNABLE | UNIT_FLAG_MOUNT |
-        UNIT_FLAG_TAXI_FLIGHT);
-    SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);    // must be set
-
-                                                               // cleanup player flags (will be re-applied if need at aura load), to avoid have ghost flag without ghost aura, for example.
-    RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK | PLAYER_FLAGS_DND | PLAYER_FLAGS_GM | PLAYER_FLAGS_GHOST | PLAYER_FLAGS_PVP_DESIRED | PLAYER_FLAGS_FFA_PVP);
-
-    RemoveStandFlags(UNIT_STAND_FLAGS_ALL);                 // one form stealth modified bytes
-
-                                                            // restore if need some important flags
-    SetUInt32Value(PLAYER_FIELD_BYTES2, 0);                 // flags empty by default
-
-    if (reapplyMods)                                        // reapply stats values only on .reset stats (level) command
-        _ApplyAllStatBonuses();
-
-    // set current level health and mana/energy to maximum after applying all mods.
-    SetHealth(GetMaxHealth());
-    SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-    SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-    if (GetPower(POWER_RAGE) > GetMaxPower(POWER_RAGE))
-        SetPower(POWER_RAGE, GetMaxPower(POWER_RAGE));
-
-    // update level to hunter/summon pet
-    if (Pet* pet = GetPet())
-        pet->SynchronizeLevelWithOwner();
-}*/
 
 void Player::SendInitialSpells()
 {
@@ -3300,7 +3150,7 @@ void Player::SendInitialSpells()
 
         data << uint16(category);                           // spell category
 
-        // send infinity cooldown in special format
+                                                            // send infinity cooldown in special format
         if (itr->second.end >= infTime)
         {
             data << uint32(1);                              // cooldown
@@ -19762,7 +19612,7 @@ bool Player::HasTitle(uint32 bitIndex) const
 
     uint32 fieldIndexOffset = bitIndex / 32;
     uint32 flag = 1 << (bitIndex % 32);
-    return HasFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
+    return HasFlag(PLAYER_FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
 }
 
 void Player::SetTitle(CharTitlesEntry const* title, bool lost)
@@ -19772,17 +19622,17 @@ void Player::SetTitle(CharTitlesEntry const* title, bool lost)
 
     if (lost)
     {
-        if (!HasFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag))
+        if (!HasFlag(PLAYER_FIELD_KNOWN_TITLES + fieldIndexOffset, flag))
             return;
 
-        RemoveFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
+        RemoveFlag(PLAYER_FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
     }
     else
     {
-        if (HasFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag))
+        if (HasFlag(PLAYER_FIELD_KNOWN_TITLES + fieldIndexOffset, flag))
             return;
 
-        SetFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
+        SetFlag(PLAYER_FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
     }
 
     WorldPacket data(SMSG_TITLE_EARNED, 4 + 4);

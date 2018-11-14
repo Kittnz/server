@@ -26,12 +26,12 @@
 
 enum EObjectFields
 {
-    OBJECT_FIELD_GUID                          = 0x00, // Size:2
-    OBJECT_FIELD_TYPE                          = 0x02, // Size:1
-    OBJECT_FIELD_ENTRY                         = 0x03, // Size:1
-    OBJECT_FIELD_SCALE_X                       = 0x04, // Size:1
-    OBJECT_FIELD_PADDING                       = 0x05, // Size:1
-    OBJECT_END                                 = 0x06,
+    OBJECT_FIELD_GUID                         = 0x0000, // Size: 2, Type: LONG, Flags: PUBLIC
+    OBJECT_FIELD_TYPE                         = 0x0002, // Size: 1, Type: INT, Flags: PUBLIC
+    OBJECT_FIELD_ENTRY                        = 0x0003, // Size: 1, Type: INT, Flags: PUBLIC
+    OBJECT_FIELD_SCALE_X                      = 0x0004, // Size: 1, Type: FLOAT, Flags: PUBLIC
+    OBJECT_FIELD_PADDING                      = 0x0005, // Size: 1, Type: INT, Flags: NONE
+    OBJECT_END                                = 0x0006,
 };
 
 enum EItemFields
@@ -43,10 +43,6 @@ enum EItemFields
     ITEM_FIELD_STACK_COUNT                    = OBJECT_END + 0x0008, // Size: 1, Type: INT, Flags: OWNER_ONLY, UNK2
     ITEM_FIELD_DURATION                       = OBJECT_END + 0x0009, // Size: 1, Type: INT, Flags: OWNER_ONLY, UNK2
     ITEM_FIELD_SPELL_CHARGES                  = OBJECT_END + 0x000A, // Size: 5, Type: INT, Flags: OWNER_ONLY, UNK2
-    ITEM_FIELD_SPELL_CHARGES_01               = OBJECT_END + 0x000B,
-    ITEM_FIELD_SPELL_CHARGES_02               = OBJECT_END + 0x000C,
-    ITEM_FIELD_SPELL_CHARGES_03               = OBJECT_END + 0x000D,
-    ITEM_FIELD_SPELL_CHARGES_04               = OBJECT_END + 0x000E,
     ITEM_FIELD_FLAGS                          = OBJECT_END + 0x000F, // Size: 1, Type: INT, Flags: PUBLIC
     ITEM_FIELD_ENCHANTMENT                    = OBJECT_END + 0x0010, // Size: 33, Type: INT, Flags: PUBLIC
     ITEM_FIELD_PROPERTY_SEED                  = OBJECT_END + 0x0031, // Size: 1, Type: INT, Flags: PUBLIC
@@ -59,10 +55,10 @@ enum EItemFields
 
 enum EContainerFields
 {
-    CONTAINER_FIELD_NUM_SLOTS = ITEM_END + 0x0000, // Size: 1, Type: INT, Flags: PUBLIC
-    CONTAINER_ALIGN_PAD = ITEM_END + 0x0001, // Size: 1, Type: BYTES, Flags: NONE
-    CONTAINER_FIELD_SLOT_1 = ITEM_END + 0x0002, // Size: 72, Type: LONG, Flags: PUBLIC
-    CONTAINER_END = ITEM_END + 0x004A,
+    CONTAINER_FIELD_NUM_SLOTS                 = ITEM_END + 0x0000, // Size: 1, Type: INT, Flags: PUBLIC
+    CONTAINER_ALIGN_PAD                       = ITEM_END + 0x0001, // Size: 1, Type: BYTES, Flags: NONE
+    CONTAINER_FIELD_SLOT_1                    = ITEM_END + 0x0002, // Size: 72, Type: LONG, Flags: PUBLIC
+    CONTAINER_END                             = ITEM_END + 0x004A,
 };
 
 enum EUnitFields
@@ -95,9 +91,9 @@ enum EUnitFields
     UNIT_FIELD_FLAGS                          = OBJECT_END + 0x0028, // Size: 1, Type: INT, Flags: PUBLIC
     UNIT_FIELD_FLAGS_2                        = OBJECT_END + 0x0029, // Size: 1, Type: INT, Flags: PUBLIC
     UNIT_FIELD_AURA                           = OBJECT_END + 0x002A, // Size: 56, Type: INT, Flags: PUBLIC
-    UNIT_FIELD_AURAFLAGS                      = OBJECT_END + 0x0062, // Size: 14, Type: BYTES, Flags: PUBLIC
-    UNIT_FIELD_AURALEVELS                     = OBJECT_END + 0x0070, // Size: 14, Type: BYTES, Flags: PUBLIC
-    UNIT_FIELD_AURAAPPLICATIONS               = OBJECT_END + 0x007E, // Size: 14, Type: BYTES, Flags: PUBLIC
+    UNIT_FIELD_AURAFLAGS                      = OBJECT_END + 0x0062, // Size: 14, Type: BYTES, Flags: PUBLIC (8 bits per aura)
+    UNIT_FIELD_AURALEVELS                     = OBJECT_END + 0x0070, // Size: 14, Type: BYTES, Flags: PUBLIC (8 bits per aura)
+    UNIT_FIELD_AURAAPPLICATIONS               = OBJECT_END + 0x007E, // Size: 14, Type: BYTES, Flags: PUBLIC (8 bits per aura)
     UNIT_FIELD_AURASTATE                      = OBJECT_END + 0x008C, // Size: 1, Type: INT, Flags: PUBLIC
     UNIT_FIELD_BASEATTACKTIME                 = OBJECT_END + 0x008D, // Size: 2, Type: INT, Flags: PUBLIC
     UNIT_FIELD_RANGEDATTACKTIME               = OBJECT_END + 0x008F, // Size: 1, Type: INT, Flags: PRIVATE
@@ -352,7 +348,7 @@ enum EUnitFields
     PLAYER_FIELD_KEYRING_SLOT_1               = UNIT_END + 0x024C, // Size: 64, Type: LONG, Flags: PRIVATE
     PLAYER_FIELD_VANITYPET_SLOT_1             = UNIT_END + 0x028C, // Size: 36, Type: LONG, Flags: PRIVATE
     PLAYER_FARSIGHT                           = UNIT_END + 0x02B0, // Size: 2, Type: LONG, Flags: PRIVATE
-    PLAYER__FIELD_KNOWN_TITLES                = UNIT_END + 0x02B2, // Size: 2, Type: LONG, Flags: PRIVATE
+    PLAYER_FIELD_KNOWN_TITLES                 = UNIT_END + 0x02B2, // Size: 2, Type: LONG, Flags: PRIVATE
     PLAYER_XP                                 = UNIT_END + 0x02B4, // Size: 1, Type: INT, Flags: PRIVATE
     PLAYER_NEXT_LEVEL_XP                      = UNIT_END + 0x02B5, // Size: 1, Type: INT, Flags: PRIVATE
     PLAYER_SKILL_INFO_1_1                     = UNIT_END + 0x02B6, // Size: 384, Type: TWO_SHORT, Flags: PRIVATE

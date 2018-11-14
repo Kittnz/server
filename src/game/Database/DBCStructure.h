@@ -262,10 +262,10 @@ struct CreatureDisplayInfoExtraEntry
     //char*                                                 // 18       m_BakeName CreatureDisplayExtra-*.blp
 };
 
-struct CreatureModelDataEntry
+/*struct CreatureModelDataEntry
 {
-    uint32_t ID;                                            // 0        m_ID
-    uint32_t flags;                                         // 1        m_flags
+    uint32 ID;                                            // 0        m_ID
+    uint32 flags;                                         // 1        m_flags
     //char* modelName;                                      // 2        m_modelName
     //uint32 sizeClass;                                     // 3        m_sizeClass
     //float modelScale;                                     // 4        m_modelScale
@@ -280,6 +280,28 @@ struct CreatureModelDataEntry
     //float collisionWidth;                                 // 13       m_collisionWidth
     //float collisionHeight;                                // 14       m_collisionHeight
     //float mountHeight;                                    // 15       m_mountHeight
+};*/
+
+struct CreatureModelDataEntry
+{
+    uint32 ID;
+    uint32 flags;
+    //char* ModelPath;
+    //uint32 Unk1;
+    //float Scale;                                             // Used in calculation of unit collision data
+    //int32 Unk2
+    //int32 Unk3
+    //uint32 Unk4
+    //uint32 Unk5f
+    //float Unk6
+    //uint32 Unk7
+    //float Unk8
+    //uint32 Unk9 
+    //uint32 Unk10 //maybe SoundID
+    //float CollisionWidth;
+    //float CollisionHeight;
+    //float MountHeight;                                       // Used in calculation of unit collision data when mounted
+    //float Unks[7]
 };
 
 struct CreatureFamilyEntry
