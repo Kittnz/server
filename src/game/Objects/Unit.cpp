@@ -8093,14 +8093,14 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate, bool forced)
         {
             if (Player* me = GetAffectingPlayer())
             {
-                WorldPacket dataForMe(SetSpeed2Opc_table[mtype][1], 18);
+                WorldPacket dataForMe(SetSpeed2Opc_table[mtype][1], mtype != MOVE_RUN ? 8 + 4 + 4 : 8 + 4 + 1 + 4);
                 dataForMe << GetPackGUID();
                 dataForMe << uint32(0);
                 if (mtype == MOVE_RUN)
-                    dataForMe << uint8(0);                           // new 2.1.0
+                    dataForMe << uint8(1);                           // new 2.1.0
                 dataForMe << float(GetSpeed(mtype));
                 me->GetSession()->SendPacket(&dataForMe);
-                me->GetCheatData()->OrderSent(&dataForMe);
+                //me->GetCheatData()->OrderSent(&dataForMe);
                 //if (this == me)
                     //if (WardenInterface* warden = me->GetSession()->GetWarden())
                         //warden->SendSpeedChange(mtype, GetSpeed(mtype));
